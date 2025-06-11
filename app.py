@@ -18,7 +18,7 @@ class SiameseRegressor(nn.Module):
     def __init__(self, base_model):
         super(SiameseRegressor, self).__init__()
         self.base = base_model
-        self.base.fc = nn.Identity()
+        self.base.fc = nn.Identity()  # Remove final classification layer
 
     def forward_once(self, x):
         return self.base(x)
