@@ -1,24 +1,25 @@
-import streamlit as st
+import os
+import gdown
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
+import streamlit as st
 import timm
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# === Download model from Google Drive (only if not present) ===
+MODEL_PATH = "siamese_similarity_model.pth"
+if not os.path.exists(MODEL_PATH):
+    file_id = "15uNd8NyJNMeP3c7k4MKNv-aiUK5Wi7CI"  # 🔁 Replace with your Google Drive file ID
+    gdown.download(f"https://drive.google.com/uc?id={file_id}", MODEL_PATH, quiet=False)
 
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))
-])
-
+# === Siamese Model Definition (same as training) ===
 class SiameseRegressor(nn.Module):
     def __init__(self, base_model):
         super(SiameseRegressor, self).__init__()
         self.base = base_model
-        self.base.fc = nn.Identity()  # Remove final classification layer
+        self.base.fc = nn.Identity()  # No classifier head in training
 
     def forward_once(self, x):
         return self.base(x)
@@ -29,57 +30,73 @@ class SiameseRegressor(nn.Module):
         cos_sim = F.cosine_similarity(emb1, emb2)
         return cos_sim.unsqueeze(1)
 
-import os
-import gdown  # Add this import
-
+# === Load Model ===
 @st.cache_resource
 def load_model():
-    if not os.path.exists("siamese_similarity_model.pth"):
-        with st.spinner("📦 Downloading model file..."):
-            url = "https://drive.google.com/uc?id=15uNd8NyJNMeP3c7k4MKNv-aiUK5Wi7CI"
-            gdown.download(url, "siamese_similarity_model.pth", quiet=False)
-    base = timm.create_model("xception", pretrained=True)
+    base = timm.create_model("xception", pretrained=False)
     base.conv1 = nn.Conv2d(1, base.conv1.out_channels, kernel_size=3, stride=2, padding=1, bias=False)
     with torch.no_grad():
         base.conv1.weight[:, 0] = base.conv1.weight.mean(dim=1)
     model = SiameseRegressor(base)
-    model.load_state_dict(torch.load("siamese_similarity_model.pth", map_location=device))
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
     model.eval()
-    return model.to(device)
+    return model
 
-st.title("Signature Similarity Verifier")
-st.markdown("Upload two signature images to compare their similarity.")
+# === Image Preprocessing ===
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.Grayscale(num_output_channels=1),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
 
-img1_file = st.file_uploader("Upload First Signature", type=['png', 'jpg'])
-img2_file = st.file_uploader("Upload Second Signature", type=['png', 'jpg'])
+def preprocess(img):
+    img = Image.open(img).convert("L")
+    return transform(img).unsqueeze(0)  # Add batch dimension
 
-if img1_file and img2_file:
-    img1 = Image.open(img1_file).convert("L")
-    img2 = Image.open(img2_file).convert("L")
-    
-    st.image([img1, img2], caption=["Signature 1", "Signature 2"], width=150)
+# === Fraud Level Comment and Color Bar ===
+def interpret_score(score):
+    if score >= 0.85:
+        return "✅ Genuine Signature", "green"
+    elif score >= 0.65:
+        return "🟡 Likely Genuine", "yellow"
+    elif score >= 0.45:
+        return "🟠 Possibly Forged", "orange"
+    else:
+        return "❌ Forged Signature", "red"
 
-    model = load_model()
-    with torch.no_grad():
-        t1 = transform(img1).unsqueeze(0).to(device)
-        t2 = transform(img2).unsqueeze(0).to(device)
-        similarity = model(t1, t2).item()
-        dissimilarity = 1 - similarity
-        percent = round(dissimilarity * 100, 2)
+# === Streamlit App ===
+st.set_page_config(page_title="Signature Similarity Verifier", layout="centered")
+st.title("✍️ Signature Verification App")
+st.markdown("Upload two signature images to compare their authenticity.")
 
-        if similarity > 0.85:
-            comment = "Highly Similar - Likely Genuine ✅"
-            color = "green"
-        elif similarity > 0.65:
-            comment = "Moderate Similarity - Possibly Genuine ⚠️"
-            color = "amber"
-        elif similarity > 0.4:
-            comment = "Low Similarity - Likely Forged ❌"
-            color = "orange"
-        else:
-            comment = "Very Low Similarity - Definite Forgery 🚨"
-            color = "red"
+col1, col2 = st.columns(2)
 
-        st.markdown(f"### Dissimilarity: **{percent}%**")
-        st.markdown(f"### Verdict: **<span style='color:{color}'>{comment}</span>**", unsafe_allow_html=True)
-        st.progress(int(percent))
+with col1:
+    img1 = st.file_uploader("Upload Signature 1", type=["png", "jpg", "jpeg"], key="img1")
+with col2:
+    img2 = st.file_uploader("Upload Signature 2", type=["png", "jpg", "jpeg"], key="img2")
+
+if img1 and img2:
+    with st.spinner("Comparing signatures..."):
+        model = load_model()
+        t1 = preprocess(img1)
+        t2 = preprocess(img2)
+
+        with torch.no_grad():
+            score = model(t1, t2).item()
+
+        label, color = interpret_score(score)
+
+        st.markdown(f"### Similarity Score: `{score:.2f}`")
+        st.markdown(f"### Prediction: **{label}**")
+        
+        st.progress(score)  # Visual scale bar
+        
+        # Optional custom color scale
+        st.markdown(
+            f"<div style='background:linear-gradient(to right, green, yellow, orange, red); height:20px; border-radius:10px;'></div>",
+            unsafe_allow_html=True
+        )
+        st.caption("Green = Genuine, Red = Forged")
+
