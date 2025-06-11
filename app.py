@@ -67,7 +67,7 @@ def preprocess_image(img):
 # ---------------------------
 # Main App
 # ---------------------------
-st.title("📝 Signature Dissimilarity Verifier")
+st.title("📝 Signature Verifier")
 
 st.write("Upload two signature images to compare their dissimilarity.")
 
@@ -92,9 +92,9 @@ if img1 and img2:
     st.subheader("🔍 Dissimilarity Score")
     st.metric(label="Dissimilarity %", value=f"{dissim:.2f}%", delta=None)
 
-    if dissim > 80:
+    if dissim > 50:
         st.error("❌ Highly Dissimilar – Possible Forgery")
-    elif dissim > 50:
+    elif dissim > 15:
         st.warning("⚠️ Moderately Dissimilar – Investigate Further")
     else:
         st.success("✅ Low Dissimilarity – Likely Genuine")
