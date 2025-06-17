@@ -67,15 +67,12 @@ def preprocess_image(img):
 # ---------------------------
 # Main App
 # ---------------------------
-st.title("📝 Signature Verifier")
-
-st.write("Upload two signature images to compare their dissimilarity.")
 
 st.title("📝 Signature Verifier")
 st.write("Upload two signature images to compare their dissimilarity.")
 
 # Display interpretation table
-st.markdown("### 📊 Dissimilarity Interpretation Table")
+st.markdown("###  Dissimilarity Interpretation Table")
 st.markdown("""
 <style>
     .range-table td, .range-table th {
@@ -146,7 +143,7 @@ if img1 and img2:
 
 # Show model F1 score (hardcoded)
 f1_score_value = 0.89  # Replace with your actual F1
-st.info(f"📈 **Model F1 Score** (on test set): `{f1_score_value}`")
+st.info(f"📈 **Model F1 Score**: `{f1_score_value}`")
 
 
 
