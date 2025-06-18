@@ -134,7 +134,7 @@ if img1 and img2:
     st.subheader("🔍 Dissimilarity Score")
     st.metric(label="Dissimilarity %", value=f"{dissim:.2f}%", delta=None)
 
-    if dissim > 70:
+    if dissim > 30:
         st.error("❌ Highly Dissimilar – Possible Forgery")
     elif dissim > 15:
         st.warning("⚠️ Moderately Dissimilar – Investigate Further")
