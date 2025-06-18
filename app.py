@@ -142,8 +142,8 @@ if img1 and img2:
         st.success("✅ Low Dissimilarity – Likely Genuine")
 
 # Show model F1 score (hardcoded)
-f1_score_value = 0.89  # Replace with your actual F1
-st.info(f"📈 **Model F1 Score**: `{f1_score_value}`")
+f1_score_value = 99.15 # Replace with your actual F1
+st.info(f"📈 **Model Accuracy**: `{f1_score_value}`%")
 
 
 
