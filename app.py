@@ -97,7 +97,7 @@ st.markdown("""
 </tr>
 <tr>
     <td>0 - 10</td>
-    <td>Likely Genuine</td>
+    <td> Matching Signature </td>
     <td style="background-color:#d4edda;">🟩 Green</td>
 </tr>
 <tr>
@@ -107,7 +107,7 @@ st.markdown("""
 </tr>
 <tr>
     <td>15 - 100</td>
-    <td>Highly Dissimilar – Possible Forgery</td>
+    <td> Highly Dissimilar </td>
     <td style="background-color:#f8d7da;">🟥 Red</td>
 </tr>
 </table>
@@ -135,11 +135,11 @@ if img1 and img2:
     st.metric(label="Dissimilarity %", value=f"{dissim:.2f}%", delta=None)
 
     if dissim > 15:
-        st.error("❌ Highly Dissimilar – Possible Forgery")
+        st.error("❌ Highly Dissimilar")
     elif dissim > 10:
-        st.warning("⚠️ Moderately Dissimilar – Investigate Further")
+        st.warning("⚠️ Moderately Dissimilar")
     else:
-        st.success("✅ Low Dissimilarity – Likely Genuine")
+        st.success("✅ Matching Signature")
 
 # Show model F1 score (hardcoded)
 f1_score_value = 99.15 # Replace with your actual F1
