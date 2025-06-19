@@ -143,7 +143,7 @@ if img1 and img2:
         style = "color:green; font-size: 30px; font-weight: bold;"
 
     st.markdown(f"<p style='{style}'>{result}</p>", unsafe_allow_html=True)
-    st.markdown(f"<small style='font-size:18px;'>Dissimilarity Score: <b>{dissim:.2f}%</b></small>", unsafe_allow_html=True)
+    st.markdown(f"<small style='font-size:18px;'>Dissimilarity: <b>{dissim:.2f}%</b></small>", unsafe_allow_html=True)
 
 # Show model F1 score (hardcoded)
 f1_score_value = 99.15  # Replace with your actual F1
