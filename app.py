@@ -62,12 +62,11 @@ def preprocess_image(img):
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
     ])
-    return transform(img).unsqueeze(0)  # Add batch dimension
+    return transform(img).unsqueeze(0)
 
 # ---------------------------
 # Main App
 # ---------------------------
-
 st.title("📝 Signature Verifier")
 st.write("Upload two signature images to compare their dissimilarity.")
 
@@ -96,17 +95,17 @@ st.markdown("""
     <th>Color Indicator</th>
 </tr>
 <tr>
-    <td>0 - 10</td>
+    <td>0 - 20</td>
     <td> Matching Signature </td>
     <td style="background-color:#d4edda;">🟩 Green</td>
 </tr>
 <tr>
-    <td>10 - 15</td>
+    <td>20 - 30</td>
     <td>Moderately Dissimilar</td>
     <td style="background-color:#fff3cd;">🟨 Amber</td>
 </tr>
 <tr>
-    <td>15 - 100</td>
+    <td>30 - 100</td>
     <td> Highly Dissimilar </td>
     <td style="background-color:#f8d7da;">🟥 Red</td>
 </tr>
@@ -130,20 +129,26 @@ if img1 and img2:
     with torch.no_grad():
         sim = model(input1, input2).item()
         dissim = (1 - sim) * 100
+        dissim = min(dissim * 2, 100)  # scale and cap at 100
 
-    st.subheader("🔍 Dissimilarity Score")
-    st.metric(label="Dissimilarity %", value=f"{dissim:.2f}%", delta=None)
-
-    if dissim > 15:
-        st.error("❌ Highly Dissimilar")
-    elif dissim > 10:
-        st.warning("⚠️ Moderately Dissimilar")
+    # Highlighted result
+    if dissim > 30:
+        result = "❌ Highly Dissimilar"
+        style = "color:red; font-size: 30px; font-weight: bold;"
+    elif dissim > 20:
+        result = "⚠️ Moderately Dissimilar"
+        style = "color:#e69500; font-size: 30px; font-weight: bold;"
     else:
-        st.success("✅ Matching Signature")
+        result = "✅ Matching Signature"
+        style = "color:green; font-size: 30px; font-weight: bold;"
+
+    st.markdown(f"<p style='{style}'>{result}</p>", unsafe_allow_html=True)
+    st.markdown(f"<small style='font-size:18px;'>Dissimilarity Score: <b>{dissim:.2f}%</b></small>", unsafe_allow_html=True)
 
 # Show model F1 score (hardcoded)
-f1_score_value = 99.15 # Replace with your actual F1
+f1_score_value = 99.15  # Replace with your actual F1
 st.info(f"📈 **Model Accuracy**: `{f1_score_value}`%")
+
 
 
 
